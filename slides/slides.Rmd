@@ -1,0 +1,43 @@
+---
+title: "Importando e Manipulando Dados Financeiros no R"
+author: "Wilson de Freitas"
+date: "22 de maio de 2018"
+output: 
+  beamer_presentation: 
+    colortheme: seagull
+    fonttheme: structuresmallcapsserif
+    theme: Pittsburgh
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Agenda
+
+- Fontes de dados financeiros
+    - Importar os dados: txt, csv, fwf, json, xml
+- Manipular os dados
+    - Objetos: data.frame, tibble, xts, ts
+    - Visualização: ggplot, tidyquant
+- Organizar os dados
+    - RSQLite, quantmod, TSdbi
+
+## Slide with Bullets
+
+- Bullet 1
+- Bullet 2
+- Bullet 3
+
+## Slide with R Output
+
+```{r cars, echo = TRUE}
+summary(cars)
+```
+
+## Slide with Plot
+
+```{r pressure}
+plot(pressure)
+```
+
