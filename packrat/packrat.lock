@@ -159,6 +159,12 @@ Version: 0.4.4
 Hash: dc14fe971ee0fdd4e22b5b1d11611a37
 Requires: dplyr, plyr, psych, reshape2, stringr, tidyr
 
+Package: caTools
+Source: CRAN
+Version: 1.17.1
+Hash: 97cb6f6293cd18d17df77a6383cc6763
+Requires: bitops
+
 Package: callr
 Source: CRAN
 Version: 2.0.3
@@ -610,6 +616,11 @@ Version: 0.1.0
 Hash: ebfbe2143ddf6dcca6c13347b3c86a28
 Requires: devtools, dplyr, forecast, lazyeval, lubridate, padr, purrr,
     readr, stringi, tibble, tidyr, xts, zoo
+
+Package: tinytex
+Source: CRAN
+Version: 0.5
+Hash: ab9db0efa5f7f5a39f18fc7577192c4b
 
 Package: tseries
 Source: CRAN
