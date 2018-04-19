@@ -1,0 +1,6 @@
+packrat/lib*
+packrat/bundles*
+packrat/src*
+.DS_Store
+.Rhistory
+.Rproj.user
