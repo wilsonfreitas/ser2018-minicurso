@@ -4,3 +4,4 @@ packrat/src*
 .DS_Store
 .Rhistory
 .Rproj.user
+packrat/lib*/
