@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Importando e Manipulando Dados Financeiros no R</title>
+    <meta charset="utf-8">
+    <meta name="author" content="Wilson de Freitas" />
+    <link href="libs/remark-css-0.0.1/default.css" rel="stylesheet" />
+    <link href="libs/remark-css-0.0.1/default-fonts.css" rel="stylesheet" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Importando e Manipulando Dados Financeiros no R
+### Wilson de Freitas
+### 22 de maio de 2018
+
+---
+
+
+
+
+
+
+# Agenda
+
+- Fontes de dados financeiros
+    - Provedores de dados na Internet
+    - Importar os dados nos formatos: txt, csv, fwf, json, xml
+- Manipular os dados
+    - Objetos: data.frame, tibble, xts, ts
+    - Visualização: ggplot, tidyquant
+- Organizar os dados
+    - RSQLite, quantmod, TSdbi
+
+---
+
+# Pacotes no R para acesso a dados
+
+**Fontes de dados nacionais**
+
+- [rbcb](https://cran.r-project.org/package=rbcb): Portal de dados abertos do BCB ([link](https://dadosabertos.bcb.gov.br/))
+- [GetTDData](https://cran.r-project.org/package=GetTDData): Dados do Tesouro Direto ([link](http://www.tesouro.gov.br/tesouro-direto-balanco-e-estatisticas))
+- [GetDFPData](https://cran.r-project.org/package=GetDFPData): Demostrativos financeiros de empresas listadas na B3 ([link](http://www.bmfbovespa.com.br/pt_br/produtos/listados-a-vista-e-derivativos/renda-variavel/empresas-listadas.htm))
+&lt;!-- - [GetHFTData](https://cran.r-project.org/package=GetHFTData): high frequency --&gt;
+- [GetITRData](https://cran.r-project.org/package=GetITRData): Informações Trimestrais das empresas listadas na B3 ([link](http://www.bmfbovespa.com.br/pt_br/produtos/listados-a-vista-e-derivativos/renda-variavel/empresas-listadas.htm))
+- [BETS](https://github.com/nmecsys/BETS): Brazilian economic time series
+
+**Fontes de dados internacionais**
+
+- [Quandl](https://cran.r-project.org/package=Quandl): The world’s most powerful data lives on Quandl ([link](http://www.quandl.com)).
+- [quantmod](https://cran.r-project.org/package=quantmod): Framework para modelagem em finanças quantitativas.
+
+---
+
+layout: true
+
+# Exemplos
+
+---
+
+
+```r
+IBOVESPA &lt;- rbcb::get_series(c(IBOVESPA = 7),
+                             last = 756,
+                             as = "xts")
+autoplot(IBOVESPA)
+```
+
+![](figures/unnamed-chunk-2-1.png)&lt;!-- --&gt;
+
+---
+
+
+```r
+IPCA &lt;- rbcb::get_series(c(IPCA = 433),
+                         start_date = "2003-01-01",
+                         end_date = "2017-12-31",
+                         as = "xts")
+autoplot(IPCA)
+```
+
+![](figures/unnamed-chunk-3-1.png)&lt;!-- --&gt;
+
+---
+
+
+```r
+SER &lt;- rbcb::get_series(c(INADIMPLÊNCIA = 21082, SPREAD = 20783),
+                         as = "xts")
+autoplot(do.call(merge.xts, SER)) + facet_free()
+```
+
+![](figures/unnamed-chunk-4-1.png)&lt;!-- --&gt;
+
+.footnote[Referência: &lt;https://analisemacro.com.br/economia/politica-monetaria/inadimplencia-vs-spread-bancario-refutando-ideias-heterodoxas/&gt;]
+
+---
+
+
+```r
+SELIC &lt;- rbcb::get_series(c(SELIC = 1178),
+                          start_date = "2003-01-01",
+                          as = "xts")
+autoplot(SELIC)
+```
+
+![](figures/unnamed-chunk-5-1.png)&lt;!-- --&gt;
+
+---
+
+
+```r
+library(GetTDData)
+ntnb &lt;- read.TD.files(asset.codes = "NTN-B",
+                      maturity = c("150820", "150850"))
+ggplot(ntnb, aes(x = as.Date(ref.date), y = price.bid,
+                 color = asset.code)) +
+  geom_line() + labs(x = "Datas", y = "Preços", colour = NULL)
+```
+![](figures/unnamed-chunk-7-1.png)&lt;!-- --&gt;
+
+---
+
+
+```r
+library(BETS)
+DESEMPREGO_SP &lt;- BETS.get(10782)
+autoplot(DESEMPREGO_SP)
+```
+
+![](figures/unnamed-chunk-8-1.png)&lt;!-- --&gt;
+
+---
+
+
+```r
+PIB &lt;- BETS.get(c(1221,1216)) # PIB SERVIÇOS, INDÚSTRIA -- IBGE
+SER &lt;- do.call(merge.xts, purrr::map(PIB, as.xts))
+names(SER) &lt;- c("SERVIÇOS", "INDÚSTRIA")
+autoplot(SER, facets = NULL) + labs(title = "PIB", colour = NULL)
+```
+
+![](figures/unnamed-chunk-9-1.png)&lt;!-- --&gt;
+
+---
+
+
+```r
+US_YIELD_10Y &lt;- Quandl::Quandl("USTREASURY/YIELD.9",
+                           type = "xts",
+                           start_date = "2015-01-01")
+autoplot(US_YIELD_10Y)
+```
+
+![](figures/unnamed-chunk-10-1.png)&lt;!-- --&gt;
+
+---
+
+
+```r
+library(quantmod)
+DJI &lt;- getSymbols("^DJI", auto.assign = FALSE,
+                  src = "yahoo", from = "2005-01-01")
+autoplot(Cl(DJI))
+```
+
+![](figures/unnamed-chunk-11-1.png)&lt;!-- --&gt;
+
+---
+
+
+```r
+library(quantmod)
+getSymbols(c("GOOG", "AAPL"), auto.assign = TRUE,
+           src = "yahoo", from = "2004-08-01")
+```
+
+```
+## [1] "GOOG" "AAPL"
+```
+
+```r
+autoplot(merge(GOOG = Cl(GOOG), AAPL = Cl(AAPL))) + facet_free()
+```
+
+![](figures/unnamed-chunk-12-1.png)&lt;!-- --&gt;
+
+---
+layout: false
+class: inverse, middle, center
+
+# rbcb
+
+---
+
+# rbcb
+
+[SGS]:https://www3.bcb.gov.br/sgspub
+[dadosabertos-bcb]:https://dadosabertos.bcb.gov.br/
+
+- Captura dados utilizando a API RESTful do Banco Central do Brasil (BCB) disponível no [Portal de Dados Abertos do BCB][dadosabertos-bcb]
+--
+
+- As séries estão disponíveis em diversos formatos e *endpoits*: JSON, CSV, XML
+--
+
+- Muitas séries são encontradas no [Sistema Gerenciador de Séries Temporais do BCB][SGS] (SGS)
+    - Atividade Econômica: contas nacionais, indústria, mercado de trabalho
+    - Economia Regional: Finanças públicas, coméricio exterior, entre outras séries para as regiões do Brasil, por estados.
+    - Expectativas de Mercado: taxas de juros, índices, moedas
+    - Economia Internacional: taxas de juros de moedas estrangeiras, balança comercial, indicadores de atividade econômica
+    - Finanças Públicas: dívida líquida do setor público, dívida mobiliária federal, receitas dos estados e municípios
+
+---
+
+# rbcb
+
+## `rbcb::get_series`
+
+- Baixa as séries do [SGS]
+
+
+```r
+args(rbcb::get_series)
+```
+
+```
+## function (code, start_date = NULL, end_date = NULL, last = 0, 
+##     as = c("tibble", "xts", "ts", "data.frame", "text")) 
+## NULL
+```
+
+.center[É necessário visitar o [SGS] para encontrar o `code` das séries]
+
+---
+
+class: center, bottom, inverse
+background-image: url(figures/SGS.png)
+background-size: 100%
+background-position: 50% 50%
+
+---
+
+layout: true
+
+# rbcb
+
+---
+
+## Atividade: Buscando uma série e obtendo os seus dados
+
+- visite o site do SGS https://www3.bcb.gov.br/sgspub
+- realize uma busca pelo termo `CDI`\* no campo **Pesquisa textual**
+- encontre a série:
+    - Nome: Taxa de juros - CDI
+    - Unidade: %a.d.
+    - Periodicidade: diária
+- complete o código abaixo para obter a série e inspecioná-la
+
+```r
+cdi_daily &lt;- rbcb::get_series(___, last = 21)
+tibble::glimpse(cdi_daily)
+```
+
+.footnote[Referência: CDI—Certificado de Depósito Interbancários &lt;http://bit.ly/taxacdi&gt;]
+
+---
+
+## Atividade: Melhorando os dados
+
+A função `tibble::glimpse` informa que o nome da colula com a variável é `12`.
+
+``` r
+tibble::glimpse(cdi_daily)
+#&gt; Observations: 21
+#&gt; Variables: 2
+#&gt; $ date &lt;date&gt; 2018-04-12, 2018-04-13, 2018-04-16, 2018-04-17, 2018-04-...
+#&gt; $ `12` &lt;dbl&gt; 0.024583, 0.024583, 0.024583, 0.024583, 0.024583, 0.02458...
+```
+
+- Para facilitar a manipulação é melhor ter nomes de variáveis válidos: começando com letras e sem caractetes especiais.
+- Para nomear as séries em `rbcb::get_series` precisa nomear os códigos das séries.
+
+```r
+rbcb::get_series(c(NOME = 999))
+```
+
+---
+
+## Atividade: Melhorando os dados
+
+- complete o código abaixo para que retorne uma série com a variável nomeada como `CDI`
+- use o argumento `last` para retornar os últimos 252 dias (1 ano em dias úteis)
+
+```r
+cdi_daily &lt;- rbcb::get_series(___, ___)
+tibble::glimpse(cdi_daily)
+```
+
+---
+
+## Atividade: Trabalhando com os dados
+
+A função `rbcb::get_series` retorna um objeto do tipo `tibble` com os dados.
+Objetos `tibble` são ideais pra se trabalhar com funções do `tidyverse`.
+
+As taxas de juros anuais são mais comuns que taxas de juros diárias, como as obtidas na última atividade.
+A fórmula `\(r_a = (1 + r_d)^{252} - 1\)` converte taxas de juros diárias para anuais.
+
+- complete o código para fazer a conversão da taxa de juros diária para juros anuais.
+
+```r
+library(tidyverse)
+library(ggplot2)
+
+cdi_annual &lt;- cdi_daily %&gt;% mutate(CDI = ___)
+
+ggplot(cdi_annual, aes(x = date, y = CDI)) + geom_line()
+```
+
+---
+
+## Atividade: Trabalhando com diferentes tipos de dados
+
+Como mencionado, `tibble` são bons para o `tidyverse`, entretanto há outros tipos de dados interessantes para outros tipos de análise.
+Por exemplo, os tipos `ts` e `xts` são muito utilizados em análise de séries temporais.
+
+- para definir o tipo retornado em `rbcb::get_series` use o argumento `as`
+    - `as` suporta os seguintes tipos: `tibble`, `data.frame`, `xts`, `ts`, `text`
+- complete o código para baixar a série do dólar (`code = 1`) com nome `USDBRL`, desde a data `2003-01-01` até o fim do ano passado (argumentos `start_date` e `end_date`), e retornando um objeto do tipo xts.
+
+```r
+usdbrl_daily &lt;- rbcb::get_series(___, start_date = ___,
+                                 end_date = ___, as = ___)
+autoplot(usdbrl_daily)
+```
+
+---
+
+## Atividade: Obtendo a série mensal do dólar
+
+- O pacote `xts` traz diversas funções que facilitam a manipulação de séries temporais.
+- A função `apply.monthly` *quebra* série em blocos mensais para processamento.
+
+- use a função `apply.monthly` para obter a série mensal do dólar pegando a última cotação de cada mês
+
+```r
+usdbrl_monthly &lt;- apply.monthly(usdbrl_daily, ___)
+autoplot(usdbrl_monthly)
+```
+
+---
+
+## Atividade: Calculando a variação da série mensal do dólar
+
+- É possível manipular objetos xts da mesma forma que matrizes e vetores.
+- Para calcular a variação da série do dólar precisa usar a função `lag`
+    - `\(lag(x_t) = x_{t-1}\)`
+- A fórmula da variação é `\(\Delta x = x_t - x_{t-1}\)`
+
+- calcule a variação mensal do dólar usando a função `lag`
+
+```r
+var_usdbrl_monthly &lt;- ___
+autoplot(var_usdbrl_monthly)
+```
+
+---
+
+## Atividade: Correlação dólar x IBOVESPA
+
+Em geral, quando há queda do índice IBOVESPA, há alta do dólar, principalmente em anos eleitorais.
+De posse das séries de variações do dólar e do IBOVESPA é possivel calcular a correlação entre estas duas séries e avaliar esta hipótese.
+
+- baixe a série do IBOVESPA (código 7) com a série nomeada IBOVESPA e em um objeto xts
+- obtenha a série mensal do IBOVESPA (dica: usar a função `xts::last`)
+- calcule a variação mensal do IBOVESPA usando a função `lag`
+
+```r
+ibovespa_daily &lt;- rbcb::get_series(___, start_date = ___,
+                                   end_date = ___, as = ___)
+ibovespa_monthly &lt;- apply.monthly(ibovespa_daily, ___)
+var_ibovespa_monthly &lt;- ___
+```
+
+---
+
+## Atividade: Correlação dólar x IBOVESPA
+
+- junte as séries de variação com `merge` e visualize com `View()` e `autoplot`
+
+```r
+var_monthly &lt;- merge(___)
+var_monthly %&gt;% View()
+var_monthly %&gt;% autoplot() + facet_free()
+```
+
+- veja que as série apresentam GAPS (`NA`s)
+
+---
+
+## Atividade: Correlação dólar x IBOVESPA
+
+- remova os `NA`s usando `is.na` nos índices de `var_monthly`
+    - use `var_monthly$IBOVESPA` e `var_monthly$USDBRL` para acessar as séries
+    - remova as linhas em que IBOVESPA ou USDBRL são NA
+- calcule a correlação entre dólar e IBOVESPA com a função `cor`
+
+```r
+var_monthly_clean &lt;- var_monthly[!is.na(var_monthly$IBOVESPA) ____]
+var_monthly_clean %&gt;% View()
+var_monthly_clean %&gt;% autoplot() + facet_free()
+
+cor(___, ___)
+```
+
+---
+
+## Atividade: Baixando multiplas séries
+
+- Para baixar multiplas séries, forneça multiplos códigos em um vetor.
+- Os códigos também podem ser nomeados para nomear as séries.
+- A função `rbcb::get_series` retorna uma lista com as séries nos tipos definidos
+
+&lt;hr/&gt;
+
+- baixe as séries de inflação: IGP-M e IPCA, para os últimos 12 meses, utilizando o formato `ts`
+- busque os códigos das curvas no site do SGS &lt;https://www3.bcb.gov.br/sgspub&gt;
+- visualize as séries
+
+```r
+infl &lt;- rbcb::get_series(c(IGPM = ___, IPCA = ___),
+                         last = ___, as = ___)
+do.call(cbind, infl) %&gt;% plot(col = "blue", type = "b")
+```
+    </textarea>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightLines": true,
+"ratio": "4:3",
+"navigation": {
+"scroll": false
+}
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function() {
+  var d = document, s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})();</script>
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {
+    skipTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+  }
+});
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://cdn.bootcss.com/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
