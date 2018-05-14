@@ -2,42 +2,179 @@
 title: "Importando e Manipulando Dados Financeiros no R"
 author: "Wilson de Freitas"
 date: "22 de maio de 2018"
+lang: pt
+fontsize: 8pt
 output: 
   beamer_presentation: 
     colortheme: seagull
-    fonttheme: structuresmallcapsserif
+    fonttheme: serif
+    keep_tex: yes
     theme: Pittsburgh
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(cache = TRUE, message = FALSE, warning = FALSE, fig.path = 'figures/')
+```
+
+```{r echo=FALSE, cache=FALSE}
+library(ggplot2)
+library(xts)
 ```
 
 ## Agenda
 
 - Fontes de dados financeiros
-    - Importar os dados: txt, csv, fwf, json, xml
+    - Provedores de dados na Internet
+    - Importar os dados nos formatos: txt, csv, fwf, json, xml
 - Manipular os dados
     - Objetos: data.frame, tibble, xts, ts
     - Visualização: ggplot, tidyquant
 - Organizar os dados
     - RSQLite, quantmod, TSdbi
 
-## Slide with Bullets
+## Pacotes no R para acesso a dados
 
-- Bullet 1
-- Bullet 2
-- Bullet 3
+**Fontes de dados nacionais**
 
-## Slide with R Output
+- [rbcb](https://cran.r-project.org/package=rbcb): <https://dadosabertos.bcb.gov.br/> - Portal de dados abertos do BCB
+- [GetTDData](https://cran.r-project.org/package=GetTDData): Dados do Tesouro Direto ([link](http://www.tesouro.gov.br/tesouro-direto-balanco-e-estatisticas))
+- [GetDFPData](https://cran.r-project.org/package=GetDFPData): Demostrativos financeiros de empresas listadas na B3 ([link](http://www.bmfbovespa.com.br/pt_br/produtos/listados-a-vista-e-derivativos/renda-variavel/empresas-listadas.htm))
+<!-- - [GetHFTData](https://cran.r-project.org/package=GetHFTData): high frequency -->
+- [GetITRData](https://cran.r-project.org/package=GetITRData): Informações Trimestrais das empresas listadas na B3 ([link](http://www.bmfbovespa.com.br/pt_br/produtos/listados-a-vista-e-derivativos/renda-variavel/empresas-listadas.htm))
+- [BETS](https://github.com/nmecsys/BETS): Brazilian economic time series
 
-```{r cars, echo = TRUE}
-summary(cars)
+**Fontes de dados internacionais**
+
+- [Quandl](https://cran.r-project.org/package=Quandl): <http://Quandl.com> - The world’s most powerful data lives on Quandl.
+- [quantmod](https://cran.r-project.org/package=quantmod): Framework de modelagem quantitativa.
+
+## Exemplos
+
+```{r fig.height=5}
+IBOVESPA <- rbcb::get_series(c(IBOVESPA = 7),
+                             last = 756,
+                             as = "xts")
+autoplot(IBOVESPA)
 ```
 
-## Slide with Plot
+## Exemplos
 
-```{r pressure}
-plot(pressure)
+```{r fig.height=5}
+IPCA <- rbcb::get_series(c(IPCA = 433),
+                         start_date = "2003-01-01", end_date = "2017-12-31",
+                         as = "xts")
+autoplot(IPCA)
 ```
+
+[^1]: \tiny{https://analisemacro.com.br/economia/politica-monetaria/inadimplencia-vs-spread-bancario-refutando-ideias-heterodoxas/}
+
+## Exemplos[^1]
+
+```{r fig.height=5}
+SER <- rbcb::get_series(c(INADIMPLÊNCIA = 21082, SPREAD = 20783),
+                         as = "xts")
+autoplot(do.call(merge.xts, SER)) + facet_free()
+```
+
+## Exemplos
+
+```{r fig.height=5}
+SELIC <- rbcb::get_series(c(SELIC = 1178),
+                          start_date = "2003-01-01",
+                          as = "xts")
+autoplot(SELIC)
+```
+
+## Exemplos
+
+```{r eval=FALSE}
+library(GetTDData)
+ntnb <- read.TD.files(asset.codes = "NTN-B", maturity = c("150820", "150850"))
+ggplot(ntnb, aes(x = as.Date(ref.date), y = price.bid, color = asset.code)) +
+  geom_line() + labs(x = "Datas", y = "Preços", colour = NULL)
+```
+```{r echo=FALSE, fig.height=5}
+load("TD.RData")
+ggplot(ntnb, aes(x = as.Date(ref.date), y = price.bid, color = asset.code)) +
+  geom_line() + labs(x = "Datas", y = "Preços", colour = NULL)
+```
+
+## Exemplos
+
+```{r fig.height=5}
+library(BETS)
+DESEMPREGO_SP <- BETS.get(10782)
+autoplot(DESEMPREGO_SP)
+```
+
+## Exemplos
+
+```{r fig.height=5}
+PIB <- BETS.get(c(1221,1216)) # PIB SERVIÇOS, INDÚSTRIA -- IBGE
+SER <- do.call(merge.xts, purrr::map(PIB, as.xts))
+names(SER) <- c("SERVIÇOS", "INDÚSTRIA")
+autoplot(SER, facets = NULL) + labs(title = "PIB", colour = NULL)
+```
+
+## Exemplos
+
+```{r fig.height=5}
+US_YIELD_10Y <- Quandl::Quandl("USTREASURY/YIELD.9",
+                           type = "xts",
+                           start_date = "2015-01-01")
+autoplot(US_YIELD_10Y)
+```
+
+## Exemplos
+
+```{r fig.height=5}
+library(quantmod)
+DJI <- getSymbols("^DJI", auto.assign = FALSE,
+                  src = "yahoo", from = "2005-01-01")
+autoplot(Cl(DJI))
+```
+
+## Exemplos
+
+```{r fig.height=5}
+library(quantmod)
+getSymbols(c("GOOG", "AAPL"), auto.assign = TRUE,
+           src = "yahoo", from = "2004-08-01")
+autoplot(merge(GOOG = Cl(GOOG), AAPL = Cl(AAPL))) + facet_free()
+```
+
+## Banco Central do Brasil (BCB)
+
+[SGS]:https://www3.bcb.gov.br/sgspub/localizarseries/localizarSeries.do?method=prepararTelaLocalizarSeries
+[dadosabertos-bcb]:https://dadosabertos.bcb.gov.br/
+
+[Sistema Gerenciador de Séries Temporais do BCB][SGS]
+
+- Atividade Econômica: contas nacionais, indústria, mercado de trabalho
+- Economia Regional: Finanças públicas, coméricio exterior, entre outras séries para as regiões do Brasil, por estados.
+- Expectativas de Mercado: taxas de juros, índices, moedas
+- Economia Internacional: taxas de juros de moedas estrangeiras, balança comercial, indicadores de atividade econômica
+- Finanças Públicas: dívida líquida do setor público, dívida mobiliária federal, receitas dos estados e municípios
+
+[Portal de Dados Abertos deo BCB][dadosabertos-bcb]
+
+- As séries do SGS com outros *endpoints* (JSON, XML, CSV)
+- RESTful Service
+
+## Banco Central do Brasil (BCB)
+
+### Como acessar?
+
+```{r}
+args(rbcb::get_series)
+```
+
+- Visitar o site do SGS para encontrar o `code` das séries
+
+----
+
+![<https://www3.bcb.gov.br/sgspub>](figures/SGS.png)
+
+
+## Banco Central do Brasil (BCB)
 
