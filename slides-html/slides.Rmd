@@ -61,6 +61,7 @@ library(xts)
 
 - [Quandl](https://cran.r-project.org/package=Quandl): The world’s most powerful data lives on Quandl ([link](http://www.quandl.com)).
 - [quantmod](https://cran.r-project.org/package=quantmod): Framework para modelagem em finanças quantitativas.
+- [tidyquant](https://business-science.github.io/tidyquant/): Bringing financial analysis to the tidyverse.
 
 ---
 
@@ -198,8 +199,6 @@ background-size: 100%
 - dplyr
 
 - xts
-
-- tidyquant
 
 ---
 layout: false
@@ -1029,6 +1028,13 @@ tail(gdp_d, 3)
 ---
 
 layout: false
+class: inverse
+background-image: url(figures/meme-desafio.jpg)
+background-size: 100%
+
+---
+
+layout: false
 class: inverse, middle, center
 
 # Projetos
@@ -1092,6 +1098,12 @@ layout: true
     - agregue por períodos dos mandatos presidenciais [link](https://pt.wikipedia.org/wiki/Lista_de_presidentes_do_Brasil)
 
 - Referência: [Variação do IBOVESPA por Governo Federal](http://wilsonfreitas.github.io/posts/variacao-do-ibovespa-por-governo-federal.html)
+
+---
+
+layout: false
+background-image: url(figures/meme-acabou.jpg)
+background-size: 100%
 
 ---
 
